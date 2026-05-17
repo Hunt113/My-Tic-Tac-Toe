@@ -272,26 +272,22 @@
             exitModal.classList.add('hidden');
             gameScreen.classList.add('hidden');
             menuScreen.classList.remove('hidden');
-            resetEntireSystem(); // Full wipe back to zeros when leaving
+            resetEntireSystem(); 
         });
 
         // --- GAME PLAY LOGIC ---
         function startNewGame(mode) {
             currentGameMode = mode;
-            
-            // Adjust scoreboard labels based on mode
             if (mode === 'bot') {
                 labelOEl.textContent = "BOT O";
             } else {
                 labelOEl.textContent = "PLAYER O";
             }
-            
             resetGameEngine();
             menuScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
         }
 
-        // Resets just the board for the auto-recreate loop
         function resetGameEngine() {
             currentPlayer = 'X';
             boardState = ["", "", "", "", "", "", "", "", ""];
@@ -303,7 +299,6 @@
             });
         }
 
-        // Full reset when clicking X and completely leaving the game mode
         function resetEntireSystem() {
             scoreX = 0;
             scoreO = 0;
@@ -329,9 +324,8 @@
                 } else if (currentGameMode === 'bot' && gameActive) {
                     currentPlayer = 'O';
                     gameStatus.textContent = "Bot is thinking...";
-                    // Temporary flag to prevent user clicking while bot thinks
                     gameActive = false; 
-                    setTimeout(executeBotMove, 400); 
+                    setTimeout(executeBotMove, 500); 
                 }
             });
         });
@@ -342,18 +336,58 @@
             cells[index].style.color = player === 'X' ? '#ff3333' : '#3399ff'; 
         }
 
+        // --- SMART BOT LOGIC ---
         function executeBotMove() {
-            // Restore game control to engine
             gameActive = true; 
             
-            let availableCells = [];
-            for (let i = 0; i < boardState.length; i++) {
-                if (boardState[i] === "") availableCells.push(i);
+            // Helper function to find a winning or blocking index
+            function findWinningOrBlockingSpot(playerSign) {
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    
+                    // Check if two spots have the targeted sign and one is completely blank
+                    if (boardState[a] === playerSign && boardState[b] === playerSign && boardState[c] === "") return c;
+                    if (boardState[a] === playerSign && boardState[c] === playerSign && boardState[b] === "") return b;
+                    if (boardState[b] === playerSign && boardState[c] === playerSign && boardState[a] === "") return a;
+                }
+                return null;
             }
 
-            if (availableCells.length > 0) {
-                const randomIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
-                executeMove(randomIndex, 'O');
+            // Rule 1: Check if the Bot ('O') can win right now
+            let targetMove = findWinningOrBlockingSpot('O');
+
+            // Rule 2: If Bot cannot win, check if it needs to block Player ('X')
+            if (targetMove === null) {
+                targetMove = findWinningOrBlockingSpot('X');
+            }
+
+            // Rule 3: Strategic human choices (Center or corners)
+            if (targetMove === null) {
+                if (boardState[4] === "") {
+                    targetMove = 4; // Take Center
+                } else {
+                    // Try to take corners randomly like a normal player
+                    let preferredCorners = [0, 2, 6, 8].filter(index => boardState[index] === "");
+                    if (preferredCorners.length > 0) {
+                        targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
+                    }
+                }
+            }
+
+            // Rule 4: Fallback to any remaining empty cell
+            if (targetMove === null) {
+                let availableCells = [];
+                for (let i = 0; i < boardState.length; i++) {
+                    if (boardState[i] === "") availableCells.push(i);
+                }
+                if (availableCells.length > 0) {
+                    targetMove = availableCells[Math.floor(Math.random() * availableCells.length)];
+                }
+            }
+
+            // Execute the decided smart move
+            if (targetMove !== null) {
+                executeMove(targetMove, 'O');
 
                 if (!checkResult()) {
                     currentPlayer = 'X';
@@ -379,8 +413,6 @@
 
             if (roundWon) {
                 gameActive = false;
-                
-                // Update internal score and update scoreboard view
                 if (currentPlayer === 'X') {
                     scoreX++;
                     scoreXEl.textContent = scoreX;
@@ -388,10 +420,7 @@
                     scoreO++;
                     scoreOEl.textContent = scoreO;
                 }
-
                 gameStatus.textContent = `${currentPlayer} Wins! New game in 3s... 🎉`;
-                
-                // Trigger 3 second automatic board reset
                 setTimeout(resetGameEngine, 3000);
                 return true;
             }
@@ -399,8 +428,6 @@
             if (!boardState.includes("")) {
                 gameActive = false;
                 gameStatus.textContent = "It's a Draw! New game in 3s... 👔";
-                
-                // Trigger 3 second automatic board reset
                 setTimeout(resetGameEngine, 3000);
                 return true;
             }
