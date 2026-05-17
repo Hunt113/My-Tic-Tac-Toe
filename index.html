@@ -3,150 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web App Tic-Tac-Toe</title>
+    <title>Tic Tac Toe Campaign</title>
     <style>
+        /* Base Styles */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e1e2f, #2d2d44);
-            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Main Menu Screen */
+        #menu-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            margin: 0;
+            height: 100vh;
         }
-        h1 { color: #4af6c3; margin-bottom: 5px; }
-        .status-container {
-            text-align: center;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.05);
+
+        .menu-btn {
+            background: linear-gradient(135deg, #ffcc00, #ff9900);
+            border: 3px solid #fff;
+            border-radius: 12px;
             padding: 15px 30px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        #level-display { font-size: 1.5rem; font-weight: bold; color: #ffbe5c; margin: 0; }
-        #difficulty-display { font-size: 1rem; color: #b5b5c3; margin: 5px 0 0 0; }
-        #game-message { font-size: 1.2rem; margin: 15px 0; min-height: 1.6rem; }
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 10px;
-            background-color: rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        }
-        .cell {
-            background: #2a2a3e;
-            border: 2px solid #3d3d5c;
-            border-radius: 8px;
-            font-size: 2.5rem;
+            font-size: 20px;
             font-weight: bold;
-            color: #ffffff;
+            color: #000;
+            cursor: pointer;
+            margin: 15px;
+            width: 250px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+        }
+
+        .menu-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Game Screen Container */
+        #game-screen {
+            position: relative;
+            padding-top: 60px;
+        }
+
+        /* The Close 'X' Button */
+        #close-game-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            background: #ff3333;
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .cell:hover { border-color: #4af6c3; }
-        .cell.x-mark { color: #4af6c3; }
-        .cell.o-mark { color: #ff6b6b; }
-        
-        /* Your clean developer credits style */
-        .credits {
-            margin-top: 25px;
-            font-size: 1rem;
-            color: #b5b5c3;
-            letter-spacing: 1px;
-            font-weight: 500;
+
+        /* Exit Confirmation Modal Overlay */
+        #exit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        .credits span {
-            color: #4af6c3;
+
+        .modal-box {
+            background: #222;
+            border: 4px solid #fff;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            width: 300px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+        }
+
+        .modal-box h3 {
+            margin-top: 0;
+            font-size: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 10px 25px;
+            font-size: 18px;
             font-weight: bold;
+            border: 2px solid white;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 90px;
+        }
+
+        .btn-yes {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-no {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Board grid layout styles */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #333;
+            border-radius: 8px;
+            font-size: 40px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h1>🏆 WEB APP TIC-TAC-TOE 🏆</h1>
-    
-    <div class="status-container">
-        <p id="level-display">LEVEL 1 / 10</p>
-        <p id="difficulty-display">Difficulty: 👶 DUMB</p>
+    <div id="menu-screen">
+        <h1>Tic Tac Toe</h1>
+        <button class="menu-btn" id="friend-mode-btn">Play With A Friend</button>
+        <button class="menu-btn" id="bot-mode-btn">Play With A Bot</button>
     </div>
 
-    <div id="game-message">Click a square to play your move!</div>
-
-    <div class="board" id="board">
-        <div class="cell" data-index="0"></div>
-        <div class="cell" data-index="1"></div>
-        <div class="cell" data-index="2"></div>
-        <div class="cell" data-index="3"></div>
-        <div class="cell" data-index="4"></div>
-        <div class="cell" data-index="5"></div>
-        <div class="cell" data-index="6"></div>
-        <div class="cell" data-index="7"></div>
-        <div class="cell" data-index="8"></div>
+    <div id="game-screen" class="hidden">
+        <button id="close-game-btn">X</button>
+        <h2 id="game-status">X's Turn</h2>
+        
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
     </div>
 
-    <div class="credits">Made By <span>Jhonatan Akiva</span></div>
+    <div id="exit-modal" class="hidden">
+        <div class="modal-box">
+            <h3>Are You Sure You Want To Leave?</h3>
+            <div class="modal-buttons">
+                <button class="modal-btn btn-yes" id="confirm-exit-btn">Yes</button>
+                <button class="modal-btn btn-no" id="cancel-exit-btn">No</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        let gameActive = true;
+        // Screen Elements
+        const menuScreen = document.getElementById('menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const exitModal = document.getElementById('exit-modal');
+
+        // Button Elements
+        const friendModeBtn = document.getElementById('friend-mode-btn');
+        const botModeBtn = document.getElementById('bot-mode-btn');
+        const closeGameBtn = document.getElementById('close-game-btn');
+        const confirmExitBtn = document.getElementById('confirm-exit-btn');
+        const cancelExitBtn = document.getElementById('cancel-exit-btn');
+        const gameStatus = document.getElementById('game-status');
         const cells = document.querySelectorAll('.cell');
-        const gameMessage = document.getElementById('game-message');
-        const levelDisplay = document.getElementById('level-display');
-        const difficultyDisplay = document.getElementById('difficulty-display');
+
+        // Game Variables
+        let currentGameMode = ''; 
+        let currentPlayer = 'X';  
+        let boardState = ["", "", "", "", "", "", "", "", ""];
+        let gameActive = true;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+            [0, 4, 8], [2, 4, 6]             
+        ];
+
+        // --- SCREEN NAVIGATION ---
+        friendModeBtn.addEventListener('click', () => startNewGame('friend'));
+        botModeBtn.addEventListener('click', () => startNewGame('bot'));
+        closeGameBtn.addEventListener('click', () => exitModal.classList.remove('hidden'));
+        cancelExitBtn.addEventListener('click', () => exitModal.classList.add('hidden'));
+
+        confirmExitBtn.addEventListener('click', () => {
+            exitModal.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            menuScreen.classList.remove('hidden');
+            resetGameEngine();
+        });
+
+        // --- GAME PLAY LOGIC ---
+        function startNewGame(mode) {
+            currentGameMode = mode;
+            resetGameEngine();
+            menuScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+        }
+
+        function resetGameEngine() {
+            currentPlayer = 'X';
+            boardState = ["", "", "", "", "", "", "", "", ""];
+            gameActive = true;
+            gameStatus.textContent = "X's Turn";
+            cells.forEach(cell => {
+                cell.textContent = "";
+                cell.style.color = "white"; 
+            });
+        }
 
         cells.forEach(cell => {
-            cell.addEventListener('click', async (e) => {
-                const index = e.target.getAttribute('data-index');
-                if (!gameActive || e.target.textContent !== '') return;
+            cell.addEventListener('click', (e) => {
+                const clickedCell = e.target;
+                const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
 
-                e.target.textContent = 'X';
-                e.target.classList.add('x-mark');
+                if (boardState[clickedCellIndex] !== "" || !gameActive) return;
 
-                gameMessage.textContent = "🤖 Server processing move...";
-                
-                try {
-                    const response = await fetch('/move', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: parseInt(index) })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    updateBoardUI(data.board);
-                    levelDisplay.textContent = `LEVEL ${data.level} / 10`;
-                    difficultyDisplay.textContent = `Difficulty: ${data.difficulty}`;
-                    gameMessage.textContent = data.message;
+                executeMove(clickedCellIndex, currentPlayer);
 
-                    if (data.gameOver) {
-                        gameActive = false;
-                        setTimeout(async () => {
-                            const resetRes = await fetch('/reset', { method: 'POST' });
-                            const resetData = await resetRes.json();
-                            updateBoardUI(resetData.board);
-                            gameMessage.textContent = "Next round started! Play your move.";
-                            gameActive = true;
-                        }, 2500);
-                    }
-                } catch (err) {
-                    gameMessage.textContent = "❌ Connection error with the local server.";
+                if (checkResult()) return;
+
+                if (currentGameMode === 'friend') {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    gameStatus.textContent = `${currentPlayer}'s Turn`;
+                } else if (currentGameMode === 'bot' && gameActive) {
+                    currentPlayer = 'O';
+                    gameStatus.textContent = "Bot is thinking...";
+                    setTimeout(executeBotMove, 400); 
                 }
             });
         });
 
-        function updateBoardUI(serverBoard) {
-            serverBoard.forEach((val, i) => {
-                cells[i].textContent = val;
-                cells[i].className = 'cell';
-                if (val === 'X') cells[i].classList.add('x-mark');
-                if (val === 'O') cells[i].classList.add('o-mark');
-            });
+        function executeMove(index, player) {
+            boardState[index] = player;
+            cells[index].textContent = player;
+            cells[index].style.color = player === 'X' ? '#ff3333' : '#3399ff'; 
+        }
+
+        function executeBotMove() {
+            if (!gameActive) return;
+
+            let availableCells = [];
+            for (let i = 0; i < boardState.length; i++) {
+                if (boardState[i] === "") availableCells.push(i);
+            }
+
+            if (availableCells.length > 0) {
+                const randomIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+                executeMove(randomIndex, 'O');
+
+                if (!checkResult()) {
+                    currentPlayer = 'X';
+                    gameStatus.textContent = "X's Turn";
+                }
+            }
+        }
+
+        function checkResult() {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = boardState[winCondition[0]];
+                let b = boardState[winCondition[1]];
+                let c = boardState[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') continue;
+                if (a === b && b === c) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameStatus.textContent = `${currentPlayer} Wins! 🎉`;
+                gameActive = false;
+                return true;
+            }
+
+            if (!boardState.includes("")) {
+                gameStatus.textContent = "It's a Draw! 👔";
+                gameActive = false;
+                return true;
+            }
+            return false;
         }
     </script>
 </body>
