@@ -13,6 +13,9 @@
             text-align: center;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
+            position: relative;
+            box-sizing: border-box;
         }
 
         .hidden {
@@ -25,7 +28,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            height: calc(100vh - 60px); /* Leave room for footer */
         }
 
         .menu-btn {
@@ -51,6 +54,7 @@
         #game-screen {
             position: relative;
             padding-top: 60px;
+            padding-bottom: 80px; /* Leave space so grid doesn't hit footer */
         }
 
         /* Scoreboard Styling */
@@ -177,6 +181,26 @@
             justify-content: center;
             cursor: pointer;
         }
+
+        /* Always-Visible Branding Footer */
+        .app-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 0;
+            background-color: #1a1a1a;
+            border-top: 2px solid #333;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #888;
+            z-index: 500; /* Stays beneath modals, above gameplay screens */
+        }
+        
+        .app-footer span {
+            color: #ffcc00; /* Distinct color highlight for your name */
+        }
     </style>
 </head>
 <body>
@@ -224,6 +248,10 @@
                 <button class="modal-btn btn-no" id="cancel-exit-btn">No</button>
             </div>
         </div>
+    </div>
+
+    <div class="app-footer">
+        Made By <span>Yhonatan Akiva</span>
     </div>
 
     <script>
@@ -340,12 +368,9 @@
         function executeBotMove() {
             gameActive = true; 
             
-            // Helper function to find a winning or blocking index
             function findWinningOrBlockingSpot(playerSign) {
                 for (let i = 0; i < winningConditions.length; i++) {
                     const [a, b, c] = winningConditions[i];
-                    
-                    // Check if two spots have the targeted sign and one is completely blank
                     if (boardState[a] === playerSign && boardState[b] === playerSign && boardState[c] === "") return c;
                     if (boardState[a] === playerSign && boardState[c] === playerSign && boardState[b] === "") return b;
                     if (boardState[b] === playerSign && boardState[c] === playerSign && boardState[a] === "") return a;
@@ -353,20 +378,19 @@
                 return null;
             }
 
-            // Rule 1: Check if the Bot ('O') can win right now
+            // Rule 1: Can Bot win?
             let targetMove = findWinningOrBlockingSpot('O');
 
-            // Rule 2: If Bot cannot win, check if it needs to block Player ('X')
+            // Rule 2: Does Bot need to block?
             if (targetMove === null) {
                 targetMove = findWinningOrBlockingSpot('X');
             }
 
-            // Rule 3: Strategic human choices (Center or corners)
+            // Rule 3: Strategic center/corners
             if (targetMove === null) {
                 if (boardState[4] === "") {
-                    targetMove = 4; // Take Center
+                    targetMove = 4; 
                 } else {
-                    // Try to take corners randomly like a normal player
                     let preferredCorners = [0, 2, 6, 8].filter(index => boardState[index] === "");
                     if (preferredCorners.length > 0) {
                         targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
@@ -374,7 +398,7 @@
                 }
             }
 
-            // Rule 4: Fallback to any remaining empty cell
+            // Rule 4: Fallback
             if (targetMove === null) {
                 let availableCells = [];
                 for (let i = 0; i < boardState.length; i++) {
@@ -385,7 +409,6 @@
                 }
             }
 
-            // Execute the decided smart move
             if (targetMove !== null) {
                 executeMove(targetMove, 'O');
 
