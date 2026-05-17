@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web App Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 { color: #4af6c3; margin-bottom: 5px; }
+        .status-container {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #level-display { font-size: 1.5rem; font-weight: bold; color: #ffbe5c; margin: 0; }
+        #difficulty-display { font-size: 1rem; color: #b5b5c3; margin: 5px 0 0 0; }
+        #game-message { font-size: 1.2rem; margin: 15px 0; min-height: 1.6rem; }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .cell {
+            background: #2a2a3e;
+            border: 2px solid #3d3d5c;
+            border-radius: 8px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cell:hover { border-color: #4af6c3; }
+        .cell.x-mark { color: #4af6c3; }
+        .cell.o-mark { color: #ff6b6b; }
+        
+        /* Your clean developer credits style */
+        .credits {
+            margin-top: 25px;
+            font-size: 1rem;
+            color: #b5b5c3;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        .credits span {
+            color: #4af6c3;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏆 WEB APP TIC-TAC-TOE 🏆</h1>
+    
+    <div class="status-container">
+        <p id="level-display">LEVEL 1 / 10</p>
+        <p id="difficulty-display">Difficulty: 👶 DUMB</p>
+    </div>
+
+    <div id="game-message">Click a square to play your move!</div>
+
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <div class="credits">Made By <span>Jhonatan Akiva</span></div>
+
+    <script>
+        let gameActive = true;
+        const cells = document.querySelectorAll('.cell');
+        const gameMessage = document.getElementById('game-message');
+        const levelDisplay = document.getElementById('level-display');
+        const difficultyDisplay = document.getElementById('difficulty-display');
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', async (e) => {
+                const index = e.target.getAttribute('data-index');
+                if (!gameActive || e.target.textContent !== '') return;
+
+                e.target.textContent = 'X';
+                e.target.classList.add('x-mark');
+
+                gameMessage.textContent = "🤖 Server processing move...";
+                
+                try {
+                    const response = await fetch('/move', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: parseInt(index) })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    updateBoardUI(data.board);
+                    levelDisplay.textContent = `LEVEL ${data.level} / 10`;
+                    difficultyDisplay.textContent = `Difficulty: ${data.difficulty}`;
+                    gameMessage.textContent = data.message;
+
+                    if (data.gameOver) {
+                        gameActive = false;
+                        setTimeout(async () => {
+                            const resetRes = await fetch('/reset', { method: 'POST' });
+                            const resetData = await resetRes.json();
+                            updateBoardUI(resetData.board);
+                            gameMessage.textContent = "Next round started! Play your move.";
+                            gameActive = true;
+                        }, 2500);
+                    }
+                } catch (err) {
+                    gameMessage.textContent = "❌ Connection error with the local server.";
+                }
+            });
+        });
+
+        function updateBoardUI(serverBoard) {
+            serverBoard.forEach((val, i) => {
+                cells[i].textContent = val;
+                cells[i].className = 'cell';
+                if (val === 'X') cells[i].classList.add('x-mark');
+                if (val === 'O') cells[i].classList.add('o-mark');
+            });
+        }
+    </script>
+</body>
+</html>
