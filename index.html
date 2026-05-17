@@ -53,6 +53,35 @@
             padding-top: 60px;
         }
 
+        /* Scoreboard Styling */
+        .scoreboard {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 10px auto 20px auto;
+            background: #222;
+            border: 2px solid #444;
+            border-radius: 10px;
+            width: fit-content;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .score-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .score-box .score-num {
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        #score-x-box { color: #ff3333; }
+        #score-o-box { color: #3399ff; }
+
         /* The Close 'X' Button */
         #close-game-btn {
             position: absolute;
@@ -70,6 +99,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 10;
         }
 
         /* Exit Confirmation Modal Overlay */
@@ -159,6 +189,18 @@
 
     <div id="game-screen" class="hidden">
         <button id="close-game-btn">X</button>
+        
+        <div class="scoreboard">
+            <div class="score-box" id="score-x-box">
+                <span>PLAYER X</span>
+                <span id="score-x" class="score-num">0</span>
+            </div>
+            <div class="score-box" id="score-o-box">
+                <span id="label-o">PLAYER O</span>
+                <span id="score-o" class="score-num">0</span>
+            </div>
+        </div>
+
         <h2 id="game-status">X's Turn</h2>
         
         <div class="board" id="board">
@@ -190,7 +232,7 @@
         const gameScreen = document.getElementById('game-screen');
         const exitModal = document.getElementById('exit-modal');
 
-        // Button Elements
+        // UI Elements
         const friendModeBtn = document.getElementById('friend-mode-btn');
         const botModeBtn = document.getElementById('bot-mode-btn');
         const closeGameBtn = document.getElementById('close-game-btn');
@@ -198,12 +240,21 @@
         const cancelExitBtn = document.getElementById('cancel-exit-btn');
         const gameStatus = document.getElementById('game-status');
         const cells = document.querySelectorAll('.cell');
+        
+        // Scoreboard Elements
+        const scoreXEl = document.getElementById('score-x');
+        const scoreOEl = document.getElementById('score-o');
+        const labelOEl = document.getElementById('label-o');
 
         // Game Variables
         let currentGameMode = ''; 
         let currentPlayer = 'X';  
         let boardState = ["", "", "", "", "", "", "", "", ""];
         let gameActive = true;
+        
+        // Score tracking
+        let scoreX = 0;
+        let scoreO = 0;
 
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], 
@@ -221,17 +272,26 @@
             exitModal.classList.add('hidden');
             gameScreen.classList.add('hidden');
             menuScreen.classList.remove('hidden');
-            resetGameEngine();
+            resetEntireSystem(); // Full wipe back to zeros when leaving
         });
 
         // --- GAME PLAY LOGIC ---
         function startNewGame(mode) {
             currentGameMode = mode;
+            
+            // Adjust scoreboard labels based on mode
+            if (mode === 'bot') {
+                labelOEl.textContent = "BOT O";
+            } else {
+                labelOEl.textContent = "PLAYER O";
+            }
+            
             resetGameEngine();
             menuScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
         }
 
+        // Resets just the board for the auto-recreate loop
         function resetGameEngine() {
             currentPlayer = 'X';
             boardState = ["", "", "", "", "", "", "", "", ""];
@@ -241,6 +301,15 @@
                 cell.textContent = "";
                 cell.style.color = "white"; 
             });
+        }
+
+        // Full reset when clicking X and completely leaving the game mode
+        function resetEntireSystem() {
+            scoreX = 0;
+            scoreO = 0;
+            scoreXEl.textContent = "0";
+            scoreOEl.textContent = "0";
+            resetGameEngine();
         }
 
         cells.forEach(cell => {
@@ -260,6 +329,8 @@
                 } else if (currentGameMode === 'bot' && gameActive) {
                     currentPlayer = 'O';
                     gameStatus.textContent = "Bot is thinking...";
+                    // Temporary flag to prevent user clicking while bot thinks
+                    gameActive = false; 
                     setTimeout(executeBotMove, 400); 
                 }
             });
@@ -272,8 +343,9 @@
         }
 
         function executeBotMove() {
-            if (!gameActive) return;
-
+            // Restore game control to engine
+            gameActive = true; 
+            
             let availableCells = [];
             for (let i = 0; i < boardState.length; i++) {
                 if (boardState[i] === "") availableCells.push(i);
@@ -306,14 +378,30 @@
             }
 
             if (roundWon) {
-                gameStatus.textContent = `${currentPlayer} Wins! 🎉`;
                 gameActive = false;
+                
+                // Update internal score and update scoreboard view
+                if (currentPlayer === 'X') {
+                    scoreX++;
+                    scoreXEl.textContent = scoreX;
+                } else {
+                    scoreO++;
+                    scoreOEl.textContent = scoreO;
+                }
+
+                gameStatus.textContent = `${currentPlayer} Wins! New game in 3s... 🎉`;
+                
+                // Trigger 3 second automatic board reset
+                setTimeout(resetGameEngine, 3000);
                 return true;
             }
 
             if (!boardState.includes("")) {
-                gameStatus.textContent = "It's a Draw! 👔";
                 gameActive = false;
+                gameStatus.textContent = "It's a Draw! New game in 3s... 👔";
+                
+                // Trigger 3 second automatic board reset
+                setTimeout(resetGameEngine, 3000);
                 return true;
             }
             return false;
