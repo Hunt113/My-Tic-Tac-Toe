@@ -275,7 +275,7 @@
         // Game Configuration Variables
         let currentGameMode = ''; 
         let currentPlayer = 'X';  
-        let myOnlineSymbol = ''; // Keeps track of whether this browser is 'X' or 'O'
+        let myOnlineSymbol = ''; 
         let currentRoomCode = '';
         let boardState = ["", "", "", "", "", "", "", "", ""];
         let gameActive = true;
@@ -378,10 +378,20 @@
             updateTurnStatusDisplay();
         });
 
+        // UPDATED DISCONNECT LOGIC: Sends player safely back to the main menu lobby
         socket.on('opponentDisconnected', () => {
-            alert("Your opponent left the room. Game over.");
             gameActive = false;
-            gameStatus.textContent = "Opponent Left! Match Void.";
+            gameStatus.style.color = "#ff3333";
+            gameStatus.textContent = "Your Opponent Left The Game! Returning to lobby...";
+            
+            // Wait 3 seconds so the player can read the alert, then change views
+            setTimeout(() => {
+                gameScreen.classList.add('hidden');
+                onlineMenuScreen.classList.add('hidden');
+                menuScreen.classList.remove('hidden');
+                gameStatus.style.color = "white"; // Reset status text color color back to base
+                resetEntireSystem();
+            }, 3000);
         });
 
         socket.on('errorMsg', (msg) => alert(msg));
@@ -431,7 +441,6 @@
                 if (boardState[clickedCellIndex] !== "" || !gameActive) return;
 
                 if (currentGameMode === 'online') {
-                    // Prevent interacting if it isn't your allocated turn slot
                     if (currentPlayer !== myOnlineSymbol) return;
                     
                     executeMove(clickedCellIndex, myOnlineSymbol);
@@ -441,7 +450,6 @@
                     currentPlayer = myOnlineSymbol === 'X' ? 'O' : 'X';
                     updateTurnStatusDisplay();
                 } else {
-                    // Local Engine
                     executeMove(clickedCellIndex, currentPlayer);
                     if (checkResult()) return;
 
