@@ -378,20 +378,16 @@
             updateTurnStatusDisplay();
         });
 
-        // UPDATED DISCONNECT LOGIC: Sends player safely back to the main menu lobby
+        // INSTANT DISCONNECT ACTIONS: Alerts player and cuts directly back to menu
         socket.on('opponentDisconnected', () => {
-            gameActive = false;
-            gameStatus.style.color = "#ff3333";
-            gameStatus.textContent = "Your Opponent Left The Game! Returning to lobby...";
+            alert("Your Opponent Left The Game!");
             
-            // Wait 3 seconds so the player can read the alert, then change views
-            setTimeout(() => {
-                gameScreen.classList.add('hidden');
-                onlineMenuScreen.classList.add('hidden');
-                menuScreen.classList.remove('hidden');
-                gameStatus.style.color = "white"; // Reset status text color color back to base
-                resetEntireSystem();
-            }, 3000);
+            // Switch view hierarchies instantly
+            gameScreen.classList.add('hidden');
+            onlineMenuScreen.classList.add('hidden');
+            menuScreen.classList.remove('hidden');
+            
+            resetEntireSystem();
         });
 
         socket.on('errorMsg', (msg) => alert(msg));
