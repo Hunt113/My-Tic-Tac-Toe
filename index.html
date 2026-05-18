@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tic Tac Toe Campaign</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         /* Base Styles */
         body {
@@ -23,7 +24,7 @@
         }
 
         /* Main Menu Screen */
-        #menu-screen {
+        #menu-screen, #online-menu-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -46,15 +47,37 @@
             transition: transform 0.2s;
         }
 
-        .menu-btn:hover {
-            transform: scale(1.05);
+        .menu-btn:hover { transform: scale(1.05); }
+
+        #hardcore-mode-btn { background: linear-gradient(135deg, #ff3333, #990000); color: white; border: 3px solid #ff6666; }
+        #online-mode-btn { background: linear-gradient(135deg, #3399ff, #0044cc); color: white; border: 3px solid #66b2ff; }
+
+        /* Online Info Input Elements */
+        .online-panel {
+            background: #222;
+            padding: 20px;
+            border: 2px solid #444;
+            border-radius: 12px;
+            margin-top: 15px;
+            width: 280px;
         }
 
-        /* Hardcore Button Theme */
-        #hardcore-mode-btn {
-            background: linear-gradient(135deg, #ff3333, #990000);
-            color: white;
-            border: 3px solid #ff6666;
+        .online-input {
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 6px;
+            border: 2px solid #fff;
+            width: 80%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .code-display {
+            font-size: 32px;
+            color: #ffcc00;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 15px 0;
         }
 
         /* Game Screen Container */
@@ -80,21 +103,13 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        .score-box {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .score-box .score-num {
-            font-size: 24px;
-            margin-top: 5px;
-        }
-
+        .score-box { display: flex; flex-direction: column; }
+        .score-box .score-num { font-size: 24px; margin-top: 5px; }
         #score-x-box { color: #ff3333; }
         #score-o-box { color: #3399ff; }
 
-        /* The Close 'X' Button */
-        #close-game-btn {
+        /* Close Button */
+        #close-game-btn, #close-online-btn {
             position: absolute;
             top: 15px;
             right: 15px;
@@ -113,101 +128,35 @@
             z-index: 10;
         }
 
-        /* Exit Confirmation Modal Overlay */
+        /* Modal Overlays */
         #exit-modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             z-index: 1000;
         }
 
         .modal-box {
-            background: #222;
-            border: 4px solid #fff;
-            border-radius: 16px;
-            padding: 30px;
-            text-align: center;
-            width: 300px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            background: #222; border: 4px solid #fff; border-radius: 16px;
+            padding: 30px; text-align: center; width: 300px;
         }
 
-        .modal-box h3 {
-            margin-top: 0;
-            font-size: 20px;
-        }
+        .modal-buttons { display: flex; justify-content: space-around; margin-top: 20px; }
+        .modal-btn { padding: 10px 25px; font-size: 18px; font-weight: bold; border: 2px solid white; border-radius: 8px; cursor: pointer; width: 90px; }
+        .btn-yes { background-color: #28a745; color: white; }
+        .btn-no { background-color: #dc3545; color: white; }
 
-        .modal-buttons {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
+        /* Board layout */
+        .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 10px; justify-content: center; margin-top: 20px; }
+        .cell { width: 100px; height: 100px; background-color: #333; border-radius: 8px; font-size: 40px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        .modal-btn {
-            padding: 10px 25px;
-            font-size: 18px;
-            font-weight: bold;
-            border: 2px solid white;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 90px;
-        }
-
-        .btn-yes {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .btn-no {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        /* Board grid layout styles */
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .cell {
-            width: 100px;
-            height: 100px;
-            background-color: #333;
-            border-radius: 8px;
-            font-size: 40px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        /* Always-Visible Branding Footer */
+        /* Branding Footer */
         .app-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px 0;
-            background-color: #1a1a1a;
-            border-top: 2px solid #333;
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            color: #888;
-            z-index: 500;
+            position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px 0;
+            background-color: #1a1a1a; border-top: 2px solid #333; font-size: 16px; font-weight: bold; color: #888; z-index: 500;
         }
-        
-        .app-footer span {
-            color: #ffcc00;
-        }
+        .app-footer span { color: #ffcc00; }
     </style>
 </head>
 <body>
@@ -217,6 +166,30 @@
         <button class="menu-btn" id="friend-mode-btn">Play With A Friend</button>
         <button class="menu-btn" id="bot-mode-btn">Play With A Bot</button>
         <button class="menu-btn" id="hardcore-mode-btn">Hardcore Mode 🔥</button>
+        <button class="menu-btn" id="online-mode-btn">Play Online 🌐</button>
+    </div>
+
+    <div id="online-menu-screen" class="hidden">
+        <button id="close-online-btn">X</button>
+        <h1>Multiplayer Lobby</h1>
+        
+        <button class="menu-btn" id="create-server-btn">Create A Server</button>
+        <button class="menu-btn" id="join-server-btn">Join A Server</button>
+
+        <div id="online-panel" class="online-panel hidden">
+            <div id="panel-host-view" class="hidden">
+                <p>Share this room code with your friend:</p>
+                <div id="room-code-display" class="code-display">000000</div>
+                <p style="color: #ffcc00; font-weight: bold;">Waiting for opponent to connect...</p>
+            </div>
+
+            <div id="panel-guest-view" class="hidden">
+                <p>Enter 6-Digit Room Code:</p>
+                <input type="text" id="room-code-input" class="online-input" maxlength="6" placeholder="Ex: 123456">
+                <br>
+                <button class="menu-btn" id="submit-code-btn" style="width: 150px; padding: 10px; font-size: 16px;">Connect</button>
+            </div>
+        </div>
     </div>
 
     <div id="game-screen" class="hidden">
@@ -224,7 +197,7 @@
         
         <div class="scoreboard">
             <div class="score-box" id="score-x-box">
-                <span>PLAYER X</span>
+                <span id="label-x">PLAYER X</span>
                 <span id="score-x" class="score-num">0</span>
             </div>
             <div class="score-box" id="score-o-box">
@@ -263,33 +236,50 @@
     </div>
 
     <script>
+        // Open WebSocket connection to hosting instance
+        const socket = io();
+
         // Screen Elements
         const menuScreen = document.getElementById('menu-screen');
+        const onlineMenuScreen = document.getElementById('online-menu-screen');
         const gameScreen = document.getElementById('game-screen');
         const exitModal = document.getElementById('exit-modal');
 
-        // UI Elements
+        // UI Panel Configurations
+        const onlinePanel = document.getElementById('online-panel');
+        const panelHostView = document.getElementById('panel-host-view');
+        const panelGuestView = document.getElementById('panel-guest-view');
+        const roomCodeDisplay = document.getElementById('room-code-display');
+        const roomCodeInput = document.getElementById('room-code-input');
+
+        // Button Elements
         const friendModeBtn = document.getElementById('friend-mode-btn');
         const botModeBtn = document.getElementById('bot-mode-btn');
         const hardcoreModeBtn = document.getElementById('hardcore-mode-btn');
+        const onlineModeBtn = document.getElementById('online-mode-btn');
+        const closeOnlineBtn = document.getElementById('close-online-btn');
+        const createServerBtn = document.getElementById('create-server-btn');
+        const joinServerBtn = document.getElementById('join-server-btn');
+        const submitCodeBtn = document.getElementById('submit-code-btn');
         const closeGameBtn = document.getElementById('close-game-btn');
         const confirmExitBtn = document.getElementById('confirm-exit-btn');
         const cancelExitBtn = document.getElementById('cancel-exit-btn');
         const gameStatus = document.getElementById('game-status');
         const cells = document.querySelectorAll('.cell');
         
-        // Scoreboard Elements
         const scoreXEl = document.getElementById('score-x');
         const scoreOEl = document.getElementById('score-o');
+        const labelXEl = document.getElementById('label-x');
         const labelOEl = document.getElementById('label-o');
 
-        // Game Variables
-        let currentGameMode = ''; // 'friend', 'bot', or 'hardcore'
+        // Game Configuration Variables
+        let currentGameMode = ''; 
         let currentPlayer = 'X';  
+        let myOnlineSymbol = ''; // Keeps track of whether this browser is 'X' or 'O'
+        let currentRoomCode = '';
         let boardState = ["", "", "", "", "", "", "", "", ""];
         let gameActive = true;
         
-        // Score tracking
         let scoreX = 0;
         let scoreO = 0;
 
@@ -299,73 +289,171 @@
             [0, 4, 8], [2, 4, 6]             
         ];
 
-        // --- SCREEN NAVIGATION ---
+        // --- NAVIGATION HANDLERS ---
         friendModeBtn.addEventListener('click', () => startNewGame('friend'));
         botModeBtn.addEventListener('click', () => startNewGame('bot'));
         hardcoreModeBtn.addEventListener('click', () => startNewGame('hardcore'));
+        
+        onlineModeBtn.addEventListener('click', () => {
+            menuScreen.classList.add('hidden');
+            onlineMenuScreen.classList.remove('hidden');
+        });
+
+        closeOnlineBtn.addEventListener('click', () => {
+            onlineMenuScreen.classList.add('hidden');
+            onlinePanel.classList.add('hidden');
+            menuScreen.classList.remove('hidden');
+        });
+
         closeGameBtn.addEventListener('click', () => exitModal.classList.remove('hidden'));
         cancelExitBtn.addEventListener('click', () => exitModal.classList.add('hidden'));
 
         confirmExitBtn.addEventListener('click', () => {
             exitModal.classList.add('hidden');
             gameScreen.classList.add('hidden');
+            onlineMenuScreen.classList.add('hidden');
             menuScreen.classList.remove('hidden');
+            if(currentGameMode === 'online') {
+                socket.emit('disconnect');
+            }
             resetEntireSystem(); 
         });
 
-        // --- GAME PLAY LOGIC ---
+        // --- INTERNET MULTIPLAYER PANEL TRIGGERS ---
+        createServerBtn.addEventListener('click', () => {
+            onlinePanel.classList.remove('hidden');
+            panelGuestView.classList.add('hidden');
+            panelHostView.classList.remove('hidden');
+            socket.emit('createRoom');
+        });
+
+        joinServerBtn.addEventListener('click', () => {
+            onlinePanel.classList.remove('hidden');
+            panelHostView.classList.add('hidden');
+            panelGuestView.classList.remove('hidden');
+            roomCodeInput.value = '';
+        });
+
+        submitCodeBtn.addEventListener('click', () => {
+            const code = roomCodeInput.value.trim();
+            if(code.length === 6) {
+                currentRoomCode = code;
+                socket.emit('joinRoom', code);
+            } else {
+                alert("Please enter a valid 6-digit room code.");
+            }
+        });
+
+        // --- SOCKET NETWORKING EVENT RECEIVERS ---
+        socket.on('roomCreated', (roomCode) => {
+            currentRoomCode = roomCode;
+            roomCodeDisplay.textContent = roomCode;
+        });
+
+        socket.on('gameStart', ({ symbol, turn }) => {
+            currentGameMode = 'online';
+            myOnlineSymbol = symbol;
+            currentPlayer = turn;
+
+            labelXEl.textContent = symbol === 'X' ? "YOU (X)" : "THEY (X)";
+            labelOEl.textContent = symbol === 'O' ? "YOU (O)" : "THEY (O)";
+
+            onlineMenuScreen.classList.add('hidden');
+            onlinePanel.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            resetGameEngine();
+            updateTurnStatusDisplay();
+        });
+
+        socket.on('moveMade', ({ index, symbol, nextTurn }) => {
+            executeMove(index, symbol);
+            currentPlayer = nextTurn;
+            if (!checkResult()) {
+                updateTurnStatusDisplay();
+            }
+        });
+
+        socket.on('roomResetByServer', () => {
+            resetGameEngine();
+            updateTurnStatusDisplay();
+        });
+
+        socket.on('opponentDisconnected', () => {
+            alert("Your opponent left the room. Game over.");
+            gameActive = false;
+            gameStatus.textContent = "Opponent Left! Match Void.";
+        });
+
+        socket.on('errorMsg', (msg) => alert(msg));
+
+        // --- ENGINE SYSTEMS ---
         function startNewGame(mode) {
             currentGameMode = mode;
-            if (mode === 'bot') {
-                labelOEl.textContent = "BOT O";
-            } else if (mode === 'hardcore') {
-                labelOEl.textContent = "EVIL BOT O";
-            } else {
-                labelOEl.textContent = "PLAYER O";
-            }
+            labelXEl.textContent = "PLAYER X";
+            if (mode === 'bot') labelOEl.textContent = "BOT O";
+            else if (mode === 'hardcore') labelOEl.textContent = "EVIL BOT O";
+            else labelOEl.textContent = "PLAYER O";
+            
             resetGameEngine();
             menuScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
         }
 
         function resetGameEngine() {
-            currentPlayer = 'X';
+            if(currentGameMode !== 'online') {
+                currentPlayer = 'X';
+            }
             boardState = ["", "", "", "", "", "", "", "", ""];
             gameActive = true;
-            gameStatus.textContent = "X's Turn";
-            cells.forEach(cell => {
-                cell.textContent = "";
-                cell.style.color = "white"; 
-            });
+            gameStatus.textContent = currentGameMode === 'online' ? "" : "X's Turn";
+            cells.forEach(cell => { cell.textContent = ""; cell.style.color = "white"; });
+            if(currentGameMode === 'online') updateTurnStatusDisplay();
         }
 
         function resetEntireSystem() {
-            scoreX = 0;
-            scoreO = 0;
-            scoreXEl.textContent = "0";
-            scoreOEl.textContent = "0";
+            scoreX = 0; scoreO = 0;
+            scoreXEl.textContent = "0"; scoreOEl.textContent = "0";
             resetGameEngine();
+        }
+
+        function updateTurnStatusDisplay() {
+            if (currentPlayer === myOnlineSymbol) {
+                gameStatus.textContent = "Your Turn!";
+            } else {
+                gameStatus.textContent = "Opponent's Turn...";
+            }
         }
 
         cells.forEach(cell => {
             cell.addEventListener('click', (e) => {
-                const clickedCell = e.target;
-                const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+                const clickedCellIndex = parseInt(e.target.getAttribute('data-index'));
 
                 if (boardState[clickedCellIndex] !== "" || !gameActive) return;
 
-                executeMove(clickedCellIndex, currentPlayer);
+                if (currentGameMode === 'online') {
+                    // Prevent interacting if it isn't your allocated turn slot
+                    if (currentPlayer !== myOnlineSymbol) return;
+                    
+                    executeMove(clickedCellIndex, myOnlineSymbol);
+                    socket.emit('makeMove', { roomCode: currentRoomCode, index: clickedCellIndex, symbol: myOnlineSymbol });
+                    
+                    if (checkResult()) return;
+                    currentPlayer = myOnlineSymbol === 'X' ? 'O' : 'X';
+                    updateTurnStatusDisplay();
+                } else {
+                    // Local Engine
+                    executeMove(clickedCellIndex, currentPlayer);
+                    if (checkResult()) return;
 
-                if (checkResult()) return;
-
-                if (currentGameMode === 'friend') {
-                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                    gameStatus.textContent = `${currentPlayer}'s Turn`;
-                } else if ((currentGameMode === 'bot' || currentGameMode === 'hardcore') && gameActive) {
-                    currentPlayer = 'O';
-                    gameStatus.textContent = "Bot is thinking...";
-                    gameActive = false; 
-                    setTimeout(executeBotMove, 500); 
+                    if (currentGameMode === 'friend') {
+                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                        gameStatus.textContent = `${currentPlayer}'s Turn`;
+                    } else if ((currentGameMode === 'bot' || currentGameMode === 'hardcore') && gameActive) {
+                        currentPlayer = 'O';
+                        gameStatus.textContent = "Bot is thinking...";
+                        gameActive = false; 
+                        setTimeout(executeBotMove, 500); 
+                    }
                 }
             });
         });
@@ -381,21 +469,16 @@
             let targetMove = null;
 
             if (currentGameMode === 'hardcore') {
-                // RUN THE UNBEATABLE MINIMAX ALGORITHM
                 let bestScore = -Infinity;
                 for (let i = 0; i < 9; i++) {
                     if (boardState[i] === "") {
                         boardState[i] = "O";
                         let score = minimax(boardState, 0, false);
                         boardState[i] = "";
-                        if (score > bestScore) {
-                            bestScore = score;
-                            targetMove = i;
-                        }
+                        if (score > bestScore) { bestScore = score; targetMove = i; }
                     }
                 }
             } else {
-                // REGULAR SMART BOT LOGIC
                 function findWinningOrBlockingSpot(playerSign) {
                     for (let i = 0; i < winningConditions.length; i++) {
                         const [a, b, c] = winningConditions[i];
@@ -405,68 +488,36 @@
                     }
                     return null;
                 }
-
-                targetMove = findWinningOrBlockingSpot('O'); // Try to win
-                if (targetMove === null) targetMove = findWinningOrBlockingSpot('X'); // Try to block
-                
+                targetMove = findWinningOrBlockingSpot('O');
+                if (targetMove === null) targetMove = findWinningOrBlockingSpot('X');
                 if (targetMove === null) {
-                    if (boardState[4] === "") {
-                        targetMove = 4; // Take center
-                    } else {
+                    if (boardState[4] === "") targetMove = 4;
+                    else {
                         let preferredCorners = [0, 2, 6, 8].filter(index => boardState[index] === "");
-                        if (preferredCorners.length > 0) {
-                            targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
-                        }
-                    }
-                }
-                if (targetMove === null) {
-                    let availableCells = [];
-                    for (let i = 0; i < boardState.length; i++) {
-                        if (boardState[i] === "") availableCells.push(i);
-                    }
-                    if (availableCells.length > 0) {
-                        targetMove = availableCells[Math.floor(Math.random() * availableCells.length)];
+                        if (preferredCorners.length > 0) targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
                     }
                 }
             }
 
             if (targetMove !== null) {
                 executeMove(targetMove, 'O');
-
-                if (!checkResult()) {
-                    currentPlayer = 'X';
-                    gameStatus.textContent = "X's Turn";
-                }
+                if (!checkResult()) { currentPlayer = 'X'; gameStatus.textContent = "X's Turn"; }
             }
         }
 
-        // --- THE UNBEATABLE MINIMAX ALGORITHM FUNCTION ---
         function minimax(state, depth, isMaximizing) {
             let result = checkScoresInternal();
-            if (result !== null) {
-                return result;
-            }
-
+            if (result !== null) return result;
             if (isMaximizing) {
                 let bestScore = -Infinity;
                 for (let i = 0; i < 9; i++) {
-                    if (state[i] === "") {
-                        state[i] = "O";
-                        let score = minimax(state, depth + 1, false);
-                        state[i] = "";
-                        bestScore = Math.max(score, bestScore);
-                    }
+                    if (state[i] === "") { state[i] = "O"; let score = minimax(state, depth + 1, false); state[i] = ""; bestScore = Math.max(score, bestScore); }
                 }
                 return bestScore;
             } else {
                 let bestScore = Infinity;
                 for (let i = 0; i < 9; i++) {
-                    if (state[i] === "") {
-                        state[i] = "X";
-                        let score = minimax(state, depth + 1, true);
-                        state[i] = "";
-                        bestScore = Math.min(score, bestScore);
-                    }
+                    if (state[i] === "") { state[i] = "X"; let score = minimax(state, depth + 1, true); state[i] = ""; bestScore = Math.min(score, bestScore); }
                 }
                 return bestScore;
             }
@@ -475,25 +526,17 @@
         function checkScoresInternal() {
             for (let i = 0; i < winningConditions.length; i++) {
                 const [a, b, c] = winningConditions[i];
-                if (boardState[a] !== "" && boardState[a] === boardState[b] && boardState[b] === boardState[c]) {
-                    return boardState[a] === "O" ? 10 : -10;
-                }
+                if (boardState[a] !== "" && boardState[a] === boardState[b] && boardState[b] === boardState[c]) return boardState[a] === "O" ? 10 : -10;
             }
             if (!boardState.includes("")) return 0;
             return null;
         }
 
-        // --- CHECK REQUISITE MATCH RESULTS ---
         function checkResult() {
             let roundWon = false;
             for (let i = 0; i < winningConditions.length; i++) {
                 const winCondition = winningConditions[i];
-                let a = boardState[winCondition[0]];
-                let b = boardState[winCondition[1]];
-                let c = boardState[winCondition[2]];
-
-                if (a === '' || b === '' || c === '') continue;
-                if (a === b && b === c) {
+                if (boardState[winCondition[0]] !== '' && boardState[winCondition[0]] === boardState[winCondition[1]] && boardState[winCondition[1]] === boardState[winCondition[2]]) {
                     roundWon = true;
                     break;
                 }
@@ -501,29 +544,39 @@
 
             if (roundWon) {
                 gameActive = false;
-                if (currentPlayer === 'X') {
-                    scoreX++;
-                } else {
+                if (currentPlayer === 'X') scoreX++;
+                else {
                     scoreO++;
-                    // HARDCORE PUNISHMENT RULE: Deduct score from player if they lose to the bot
-                    if (currentGameMode === 'hardcore') {
-                        scoreX = Math.max(0, scoreX - 1); // Prevents score dropping below 0
-                    }
+                    if (currentGameMode === 'hardcore') scoreX = Math.max(0, scoreX - 1);
                 }
                 
-                // Refresh layout numbers
                 scoreXEl.textContent = scoreX;
                 scoreOEl.textContent = scoreO;
                 
-                gameStatus.textContent = `${currentPlayer} Wins! New game in 3s... 🎉`;
-                setTimeout(resetGameEngine, 3000);
+                gameStatus.textContent = currentGameMode === 'online' 
+                    ? (currentPlayer === myOnlineSymbol ? "You Win! 🎉 New match in 3s..." : "Opponent Wins! 😢 New match in 3s...") 
+                    : `${currentPlayer} Wins! New game in 3s... 🎉`;
+                
+                setTimeout(() => {
+                    if(currentGameMode === 'online') {
+                        socket.emit('requestReset', currentRoomCode);
+                    } else {
+                        resetGameEngine();
+                    }
+                }, 3000);
                 return true;
             }
 
             if (!boardState.includes("")) {
                 gameActive = false;
                 gameStatus.textContent = "It's a Draw! New game in 3s... 👔";
-                setTimeout(resetGameEngine, 3000);
+                setTimeout(() => {
+                    if(currentGameMode === 'online') {
+                        socket.emit('requestReset', currentRoomCode);
+                    } else {
+                        resetGameEngine();
+                    }
+                }, 3000);
                 return true;
             }
             return false;
