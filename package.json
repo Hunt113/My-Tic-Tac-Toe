@@ -1,12 +1,16 @@
 {
-  "name": "my-tic-tac-toe",
+  "name": "tic-tac-toe-online",
   "version": "1.0.0",
-  "description": "Tic Tac Toe Level Game",
-  "main": "index.js",
+  "description": "Online Multiplayer Tic Tac Toe",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
