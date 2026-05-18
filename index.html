@@ -28,7 +28,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: calc(100vh - 60px); /* Leave room for footer */
+            height: calc(100vh - 60px); 
         }
 
         .menu-btn {
@@ -40,7 +40,7 @@
             font-weight: bold;
             color: #000;
             cursor: pointer;
-            margin: 15px;
+            margin: 10px;
             width: 250px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             transition: transform 0.2s;
@@ -50,11 +50,18 @@
             transform: scale(1.05);
         }
 
+        /* Hardcore Button Theme */
+        #hardcore-mode-btn {
+            background: linear-gradient(135deg, #ff3333, #990000);
+            color: white;
+            border: 3px solid #ff6666;
+        }
+
         /* Game Screen Container */
         #game-screen {
             position: relative;
             padding-top: 60px;
-            padding-bottom: 80px; /* Leave space so grid doesn't hit footer */
+            padding-bottom: 80px; 
         }
 
         /* Scoreboard Styling */
@@ -195,11 +202,11 @@
             font-weight: bold;
             letter-spacing: 1px;
             color: #888;
-            z-index: 500; /* Stays beneath modals, above gameplay screens */
+            z-index: 500;
         }
         
         .app-footer span {
-            color: #ffcc00; /* Distinct color highlight for your name */
+            color: #ffcc00;
         }
     </style>
 </head>
@@ -209,6 +216,7 @@
         <h1>Tic Tac Toe</h1>
         <button class="menu-btn" id="friend-mode-btn">Play With A Friend</button>
         <button class="menu-btn" id="bot-mode-btn">Play With A Bot</button>
+        <button class="menu-btn" id="hardcore-mode-btn">Hardcore Mode 🔥</button>
     </div>
 
     <div id="game-screen" class="hidden">
@@ -263,6 +271,7 @@
         // UI Elements
         const friendModeBtn = document.getElementById('friend-mode-btn');
         const botModeBtn = document.getElementById('bot-mode-btn');
+        const hardcoreModeBtn = document.getElementById('hardcore-mode-btn');
         const closeGameBtn = document.getElementById('close-game-btn');
         const confirmExitBtn = document.getElementById('confirm-exit-btn');
         const cancelExitBtn = document.getElementById('cancel-exit-btn');
@@ -275,7 +284,7 @@
         const labelOEl = document.getElementById('label-o');
 
         // Game Variables
-        let currentGameMode = ''; 
+        let currentGameMode = ''; // 'friend', 'bot', or 'hardcore'
         let currentPlayer = 'X';  
         let boardState = ["", "", "", "", "", "", "", "", ""];
         let gameActive = true;
@@ -293,6 +302,7 @@
         // --- SCREEN NAVIGATION ---
         friendModeBtn.addEventListener('click', () => startNewGame('friend'));
         botModeBtn.addEventListener('click', () => startNewGame('bot'));
+        hardcoreModeBtn.addEventListener('click', () => startNewGame('hardcore'));
         closeGameBtn.addEventListener('click', () => exitModal.classList.remove('hidden'));
         cancelExitBtn.addEventListener('click', () => exitModal.classList.add('hidden'));
 
@@ -308,6 +318,8 @@
             currentGameMode = mode;
             if (mode === 'bot') {
                 labelOEl.textContent = "BOT O";
+            } else if (mode === 'hardcore') {
+                labelOEl.textContent = "EVIL BOT O";
             } else {
                 labelOEl.textContent = "PLAYER O";
             }
@@ -349,7 +361,7 @@
                 if (currentGameMode === 'friend') {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                     gameStatus.textContent = `${currentPlayer}'s Turn`;
-                } else if (currentGameMode === 'bot' && gameActive) {
+                } else if ((currentGameMode === 'bot' || currentGameMode === 'hardcore') && gameActive) {
                     currentPlayer = 'O';
                     gameStatus.textContent = "Bot is thinking...";
                     gameActive = false; 
@@ -364,48 +376,57 @@
             cells[index].style.color = player === 'X' ? '#ff3333' : '#3399ff'; 
         }
 
-        // --- SMART BOT LOGIC ---
         function executeBotMove() {
             gameActive = true; 
-            
-            function findWinningOrBlockingSpot(playerSign) {
-                for (let i = 0; i < winningConditions.length; i++) {
-                    const [a, b, c] = winningConditions[i];
-                    if (boardState[a] === playerSign && boardState[b] === playerSign && boardState[c] === "") return c;
-                    if (boardState[a] === playerSign && boardState[c] === playerSign && boardState[b] === "") return b;
-                    if (boardState[b] === playerSign && boardState[c] === playerSign && boardState[a] === "") return a;
-                }
-                return null;
-            }
+            let targetMove = null;
 
-            // Rule 1: Can Bot win?
-            let targetMove = findWinningOrBlockingSpot('O');
-
-            // Rule 2: Does Bot need to block?
-            if (targetMove === null) {
-                targetMove = findWinningOrBlockingSpot('X');
-            }
-
-            // Rule 3: Strategic center/corners
-            if (targetMove === null) {
-                if (boardState[4] === "") {
-                    targetMove = 4; 
-                } else {
-                    let preferredCorners = [0, 2, 6, 8].filter(index => boardState[index] === "");
-                    if (preferredCorners.length > 0) {
-                        targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
+            if (currentGameMode === 'hardcore') {
+                // RUN THE UNBEATABLE MINIMAX ALGORITHM
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (boardState[i] === "") {
+                        boardState[i] = "O";
+                        let score = minimax(boardState, 0, false);
+                        boardState[i] = "";
+                        if (score > bestScore) {
+                            bestScore = score;
+                            targetMove = i;
+                        }
                     }
                 }
-            }
-
-            // Rule 4: Fallback
-            if (targetMove === null) {
-                let availableCells = [];
-                for (let i = 0; i < boardState.length; i++) {
-                    if (boardState[i] === "") availableCells.push(i);
+            } else {
+                // REGULAR SMART BOT LOGIC
+                function findWinningOrBlockingSpot(playerSign) {
+                    for (let i = 0; i < winningConditions.length; i++) {
+                        const [a, b, c] = winningConditions[i];
+                        if (boardState[a] === playerSign && boardState[b] === playerSign && boardState[c] === "") return c;
+                        if (boardState[a] === playerSign && boardState[c] === playerSign && boardState[b] === "") return b;
+                        if (boardState[b] === playerSign && boardState[c] === playerSign && boardState[a] === "") return a;
+                    }
+                    return null;
                 }
-                if (availableCells.length > 0) {
-                    targetMove = availableCells[Math.floor(Math.random() * availableCells.length)];
+
+                targetMove = findWinningOrBlockingSpot('O'); // Try to win
+                if (targetMove === null) targetMove = findWinningOrBlockingSpot('X'); // Try to block
+                
+                if (targetMove === null) {
+                    if (boardState[4] === "") {
+                        targetMove = 4; // Take center
+                    } else {
+                        let preferredCorners = [0, 2, 6, 8].filter(index => boardState[index] === "");
+                        if (preferredCorners.length > 0) {
+                            targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
+                        }
+                    }
+                }
+                if (targetMove === null) {
+                    let availableCells = [];
+                    for (let i = 0; i < boardState.length; i++) {
+                        if (boardState[i] === "") availableCells.push(i);
+                    }
+                    if (availableCells.length > 0) {
+                        targetMove = availableCells[Math.floor(Math.random() * availableCells.length)];
+                    }
                 }
             }
 
@@ -419,6 +440,50 @@
             }
         }
 
+        // --- THE UNBEATABLE MINIMAX ALGORITHM FUNCTION ---
+        function minimax(state, depth, isMaximizing) {
+            let result = checkScoresInternal();
+            if (result !== null) {
+                return result;
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === "") {
+                        state[i] = "O";
+                        let score = minimax(state, depth + 1, false);
+                        state[i] = "";
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (state[i] === "") {
+                        state[i] = "X";
+                        let score = minimax(state, depth + 1, true);
+                        state[i] = "";
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function checkScoresInternal() {
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (boardState[a] !== "" && boardState[a] === boardState[b] && boardState[b] === boardState[c]) {
+                    return boardState[a] === "O" ? 10 : -10;
+                }
+            }
+            if (!boardState.includes("")) return 0;
+            return null;
+        }
+
+        // --- CHECK REQUISITE MATCH RESULTS ---
         function checkResult() {
             let roundWon = false;
             for (let i = 0; i < winningConditions.length; i++) {
@@ -438,11 +503,18 @@
                 gameActive = false;
                 if (currentPlayer === 'X') {
                     scoreX++;
-                    scoreXEl.textContent = scoreX;
                 } else {
                     scoreO++;
-                    scoreOEl.textContent = scoreO;
+                    // HARDCORE PUNISHMENT RULE: Deduct score from player if they lose to the bot
+                    if (currentGameMode === 'hardcore') {
+                        scoreX = Math.max(0, scoreX - 1); // Prevents score dropping below 0
+                    }
                 }
+                
+                // Refresh layout numbers
+                scoreXEl.textContent = scoreX;
+                scoreOEl.textContent = scoreO;
+                
                 gameStatus.textContent = `${currentPlayer} Wins! New game in 3s... 🎉`;
                 setTimeout(resetGameEngine, 3000);
                 return true;
