@@ -29,7 +29,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh; 
+            height: calc(100vh - 60px); 
         }
 
         .menu-btn {
@@ -84,6 +84,7 @@
         #game-screen {
             position: relative;
             padding-top: 60px;
+            padding-bottom: 80px; 
         }
 
         /* Scoreboard Styling */
@@ -149,6 +150,13 @@
         /* Board layout */
         .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 10px; justify-content: center; margin-top: 20px; }
         .cell { width: 100px; height: 100px; background-color: #333; border-radius: 8px; font-size: 40px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Branding Footer */
+        .app-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px 0;
+            background-color: #1a1a1a; border-top: 2px solid #333; font-size: 16px; font-weight: bold; color: #888; z-index: 500;
+        }
+        .app-footer span { color: #ffcc00; }
     </style>
 </head>
 <body>
@@ -223,9 +231,14 @@
         </div>
     </div>
 
+    <div class="app-footer">
+        Made By <span>Yhonatan Akiva</span>
+    </div>
+
     <script>
         // Open WebSocket connection to hosting instance
         const socket = io();
+
         // Screen Elements
         const menuScreen = document.getElementById('menu-screen');
         const onlineMenuScreen = document.getElementById('online-menu-screen');
