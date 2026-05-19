@@ -1,13 +1,13 @@
 {
-  "name": "tic-tac-toe-multiplayer",
+  "name": "elian-ai-single-script",
   "version": "1.0.0",
-  "description": "Multiplayer Tic Tac Toe Game",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "@google/genai": "^0.1.1",
+    "express": "^4.19.2"
   }
 }
