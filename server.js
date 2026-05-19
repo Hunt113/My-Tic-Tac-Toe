@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 
 // Initialize the Google Gen AI SDK
 // It automatically looks for an Environment Variable named GEMINI_API_KEY
-const ai = new GoogleGenAI();
+const ai = new GoogleGenAI(AIzaSyBl12cHDoqW65LFY7HY7igCDatMbEarxpc);
 
 app.use(express.json());
 
