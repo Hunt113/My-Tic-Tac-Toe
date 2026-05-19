@@ -3,585 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic Tac Toe Campaign</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>Tommy AI - Mainframe Control Center</title>
     <style>
-        /* Base Styles */
+        /* Core Tech Aesthetics */
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #121212;
-            color: white;
-            text-align: center;
+            background-color: #05070a;
+            color: #e2e8f0;
+            font-family: 'Courier New', Courier, monospace;
             margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            position: relative;
+            padding: 20px;
+            overflow-x: hidden;
             box-sizing: border-box;
+            background-image: 
+                radial-gradient(circle at center, #0c1524 0%, #05070a 100%),
+                linear-gradient(rgba(18, 24, 38, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 24, 38, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
         }
 
-        .hidden {
-            display: none !important;
+        /* Main Grid Framework */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 350px;
+            grid-gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
         }
 
-        /* Main Menu Screen */
-        #menu-screen, #online-menu-screen {
+        /* Tech Panels */
+        .panel {
+            background: rgba(11, 15, 24, 0.85);
+            border: 1px solid #1f293d;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #00d2ff, transparent);
+        }
+
+        .panel-header {
+            font-size: 14px;
+            font-weight: bold;
+            color: #00d2ff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1f293d;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #39ff14;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #39ff14;
+            display: inline-block;
+        }
+
+        /* --- CENTER CORE MAIN PANEL --- */
+        .core-display {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: calc(100vh - 60px); 
-        }
-
-        .menu-btn {
-            background: linear-gradient(135deg, #ffcc00, #ff9900);
-            border: 3px solid #fff;
-            border-radius: 12px;
-            padding: 15px 30px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #000;
-            cursor: pointer;
-            margin: 10px;
-            width: 250px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            transition: transform 0.2s;
-        }
-
-        .menu-btn:hover { transform: scale(1.05); }
-
-        #hardcore-mode-btn { background: linear-gradient(135deg, #ff3333, #990000); color: white; border: 3px solid #ff6666; }
-        #online-mode-btn { background: linear-gradient(135deg, #3399ff, #0044cc); color: white; border: 3px solid #66b2ff; }
-
-        /* Online Info Input Elements */
-        .online-panel {
-            background: #222;
-            padding: 20px;
-            border: 2px solid #444;
-            border-radius: 12px;
-            margin-top: 15px;
-            width: 280px;
-        }
-
-        .online-input {
-            padding: 10px;
-            font-size: 18px;
-            border-radius: 6px;
-            border: 2px solid #fff;
-            width: 80%;
             text-align: center;
-            margin-bottom: 10px;
+            padding: 40px 20px;
         }
 
-        .code-display {
-            font-size: 32px;
-            color: #ffcc00;
-            font-weight: bold;
-            letter-spacing: 2px;
-            margin: 15px 0;
+        .mainframe-title {
+            font-size: 46px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #00d2ff, #b5179e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 5px 0;
+            filter: drop-shadow(0 0 15px rgba(0, 210, 255, 0.4));
         }
 
-        /* Game Screen Container */
-        #game-screen {
-            position: relative;
-            padding-top: 60px;
-            padding-bottom: 80px; 
+        .core-subtitle {
+            color: #4a5d78;
+            font-size: 14px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
         }
 
-        /* Scoreboard Styling */
-        .scoreboard {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin: 10px auto 20px auto;
-            background: #222;
-            border: 2px solid #444;
-            border-radius: 10px;
-            width: fit-content;
-            padding: 10px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .score-box { display: flex; flex-direction: column; }
-        .score-box .score-num { font-size: 24px; margin-top: 5px; }
-        #score-x-box { color: #ff3333; }
-        #score-o-box { color: #3399ff; }
-
-        /* Close Button */
-        #close-game-btn, #close-online-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 24px;
-            font-weight: bold;
-            background: #ff3333;
-            color: white;
-            border: 2px solid white;
+        /* Animated Glowing Brain Core Symbol */
+        .neural-core-avatar {
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
+            border: 4px double #00d2ff;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2), inset 0 0 30px rgba(0, 210, 255, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 10;
+            font-size: 75px;
+            color: #b5179e;
+            text-shadow: 0 0 20px #b5179e;
+            margin-bottom: 40px;
+            animation: pulseCore 3s infinite ease-in-out;
+            background: rgba(17, 22, 34, 0.6);
         }
 
-        /* Modal Overlays */
-        #exit-modal {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 1000;
+        /* Engine Hardware Status Banner */
+        .engine-banner {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 12px 35px;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .engine-banner span {
+            color: #39ff14;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(57,255,20,0.5);
         }
 
-        .modal-box {
-            background: #222; border: 4px solid #fff; border-radius: 16px;
-            padding: 30px; text-align: center; width: 300px;
+        /* --- DATA STREAM TERMINAL LOG --- */
+        .terminal-box {
+            height: 180px;
+            background: #030508;
+            border: 1px solid #151c2c;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: hidden;
+            font-size: 11px;
+            color: #4af626;
+            line-height: 1.5;
+            text-align: left;
         }
 
-        .modal-buttons { display: flex; justify-content: space-around; margin-top: 20px; }
-        .modal-btn { padding: 10px 25px; font-size: 18px; font-weight: bold; border: 2px solid white; border-radius: 8px; cursor: pointer; width: 90px; }
-        .btn-yes { background-color: #28a745; color: white; }
-        .btn-no { background-color: #dc3545; color: white; }
-
-        /* Board layout */
-        .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 10px; justify-content: center; margin-top: 20px; }
-        .cell { width: 100px; height: 100px; background-color: #333; border-radius: 8px; font-size: 40px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-        /* Branding Footer */
-        .app-footer {
-            position: fixed; bottom: 0; left: 0; width: 100%; padding: 15px 0;
-            background-color: #1a1a1a; border-top: 2px solid #333; font-size: 16px; font-weight: bold; color: #888; z-index: 500;
+        /* --- PERFORMANCE GAUGES --- */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin-top: 15px;
         }
-        .app-footer span { color: #ffcc00; }
+
+        .gauge-card {
+            background: #070a12;
+            border: 1px solid #151c2c;
+            border-radius: 6px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+
+        .gauge-val {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff007f;
+            margin-bottom: 5px;
+        }
+
+        .gauge-lbl {
+            font-size: 10px;
+            color: #4a5d78;
+            text-transform: uppercase;
+        }
+
+        /* --- PROGRESS BARS --- */
+        .progress-wrapper {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .progress-lbl {
+            font-size: 11px;
+            color: #8a99ad;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar-bg {
+            background: #111622;
+            height: 6px;
+            border-radius: 3px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d2ff, #b5179e);
+            width: 0%;
+            transition: width 0.4s ease;
+            box-shadow: 0 0 8px #00d2ff;
+        }
+
+        /* Handshake Network Visual Frame */
+        .handshake-frame {
+            height: 90px;
+            border: 1px dashed #1f293d;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #00d2ff;
+            background: rgba(0, 210, 255, 0.02);
+            margin-top: 10px;
+            text-shadow: 0 0 10px rgba(0,210,255,0.4);
+        }
+
+        /* Footing Developer Note */
+        .dev-footer {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 12px;
+            color: #334155;
+            margin-top: 15px;
+            letter-spacing: 1px;
+        }
+        .dev-footer span { color: #475569; font-weight: bold;}
+
+        /* --- HARDWARE ANIMATION LOOP SCALES --- */
+        @keyframes pulseCore {
+            0% { transform: scale(1); box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); border-color: #00d2ff; }
+            50% { transform: scale(1.03); box-shadow: 0 0 50px rgba(181, 23, 183, 0.5); border-color: #b5179e; }
+            100% { transform: scale(1); box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); border-color: #00d2ff; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="menu-screen">
-        <h1>Tic Tac Toe</h1>
-        <button class="menu-btn" id="friend-mode-btn">Play With A Friend</button>
-        <button class="menu-btn" id="bot-mode-btn">Play With A Bot</button>
-        <button class="menu-btn" id="hardcore-mode-btn">Hardcore Mode 🔥</button>
-        <button class="menu-btn" id="online-mode-btn">Play Online 🌐</button>
-    </div>
-
-    <div id="online-menu-screen" class="hidden">
-        <button id="close-online-btn">X</button>
-        <h1>Multiplayer Lobby</h1>
+    <div class="dashboard-container">
         
-        <button class="menu-btn" id="create-server-btn">Create A Server</button>
-        <button class="menu-btn" id="join-server-btn">Join A Server</button>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <span>AI Core Status</span>
+                    <span class="status-dot"></span>
+                </div>
+                
+                <div class="progress-wrapper">
+                    <div class="progress-lbl"><span>Synaptic Load</span><span id="load-txt">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="load-bar"></div></div>
+                </div>
+                
+                <div class="progress-wrapper">
+                    <div class="progress-lbl"><span>Memory Allocation</span><span id="mem-txt">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="mem-bar"></div></div>
+                </div>
 
-        <div id="online-panel" class="online-panel hidden">
-            <div id="panel-host-view" class="hidden">
-                <p>Share this room code with your friend:</p>
-                <div id="room-code-display" class="code-display">000000</div>
-                <p style="color: #ffcc00; font-weight: bold;">Waiting for opponent to connect...</p>
+                <div class="progress-wrapper">
+                    <div class="progress-lbl"><span>Thread Stability</span><span id="stable-txt">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="stable-bar"></div></div>
+                </div>
             </div>
 
-            <div id="panel-guest-view" class="hidden">
-                <p>Enter 6-Digit Room Code:</p>
-                <input type="text" id="room-code-input" class="online-input" maxlength="6" placeholder="Ex: 123456">
-                <br>
-                <button class="menu-btn" id="submit-code-btn" style="width: 150px; padding: 10px; font-size: 16px;">Connect</button>
+            <div class="panel">
+                <div class="panel-header">Data Processing Stream</div>
+                <div class="terminal-box" id="terminal">
+                    [SYSTEM INITIALIZATION COMPLETE]<br>
+                    [CONNECTING TO NEURAL ROUTER...]<br>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="panel core-display">
+            <h1 class="mainframe-title">Tommy AI</h1>
+            <div class="core-subtitle">Neural Mainframe Engine</div>
+            
+            <div class="neural-core-avatar">Ψ</div>
+            
+            <div class="engine-banner">
+                AI ENGINE STATE: <span>ACTIVE & READY</span>
             </div>
         </div>
-    </div>
 
-    <div id="game-screen" class="hidden">
-        <button id="close-game-btn">X</button>
-        
-        <div class="scoreboard">
-            <div class="score-box" id="score-x-box">
-                <span id="label-x">PLAYER X</span>
-                <span id="score-x" class="score-num">0</span>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="panel">
+                <div class="panel-header">Learning Framework</div>
+                
+                <div class="progress-wrapper">
+                    <div class="progress-lbl"><span>Model Refinement</span><span id="model-txt">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="model-bar"></div></div>
+                </div>
+
+                <div class="progress-wrapper">
+                    <div class="progress-lbl"><span>Heuristics Calculation</span><span id="heur-txt">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="heur-bar"></div></div>
+                </div>
             </div>
-            <div class="score-box" id="score-o-box">
-                <span id="label-o">PLAYER O</span>
-                <span id="score-o" class="score-num">0</span>
+
+            <div class="panel">
+                <div class="panel-header">Network Diagnostics</div>
+                <div class="gauge-lbl">Active Handshake Protocol</div>
+                <div class="handshake-frame">🤝</div>
+                
+                <div class="metrics-grid">
+                    <div class="gauge-card">
+                        <div class="gauge-val" id="ping-val">14ms</div>
+                        <div class="gauge-lbl">Latency</div>
+                    </div>
+                    <div class="gauge-card">
+                        <div class="gauge-val" id="loss-val">0.0%</div>
+                        <div class="gauge-lbl">Packet Loss</div>
+                    </div>
+                    <div class="gauge-card">
+                        <div class="gauge-val" id="rate-val">48kb/s</div>
+                        <div class="gauge-lbl">Throughput</div>
+                    </div>
+                </div>
             </div>
+
         </div>
 
-        <h2 id="game-status">X's Turn</h2>
-        
-        <div class="board" id="board">
-            <div class="cell" data-index="0"></div>
-            <div class="cell" data-index="1"></div>
-            <div class="cell" data-index="2"></div>
-            <div class="cell" data-index="3"></div>
-            <div class="cell" data-index="4"></div>
-            <div class="cell" data-index="5"></div>
-            <div class="cell" data-index="6"></div>
-            <div class="cell" data-index="7"></div>
-            <div class="cell" data-index="8"></div>
+        <div class="dev-footer">
+            SYSTEM AUTHENTICATION CONTROL // DESIGNED BY <span>YHONATAN AKIVA</span>
         </div>
-    </div>
 
-    <div id="exit-modal" class="hidden">
-        <div class="modal-box">
-            <h3>Are You Sure You Want To Leave?</h3>
-            <div class="modal-buttons">
-                <button class="modal-btn btn-yes" id="confirm-exit-btn">Yes</button>
-                <button class="modal-btn btn-no" id="cancel-exit-btn">No</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="app-footer">
-        Made By <span>Yhonatan Akiva</span>
     </div>
 
     <script>
-        // Open WebSocket connection to hosting instance
-        const socket = io();
-
-        // Screen Elements
-        const menuScreen = document.getElementById('menu-screen');
-        const onlineMenuScreen = document.getElementById('online-menu-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const exitModal = document.getElementById('exit-modal');
-
-        // UI Panel Configurations
-        const onlinePanel = document.getElementById('online-panel');
-        const panelHostView = document.getElementById('panel-host-view');
-        const panelGuestView = document.getElementById('panel-guest-view');
-        const roomCodeDisplay = document.getElementById('room-code-display');
-        const roomCodeInput = document.getElementById('room-code-input');
-
-        // Button Elements
-        const friendModeBtn = document.getElementById('friend-mode-btn');
-        const botModeBtn = document.getElementById('bot-mode-btn');
-        const hardcoreModeBtn = document.getElementById('hardcore-mode-btn');
-        const onlineModeBtn = document.getElementById('online-mode-btn');
-        const closeOnlineBtn = document.getElementById('close-online-btn');
-        const createServerBtn = document.getElementById('create-server-btn');
-        const joinServerBtn = document.getElementById('join-server-btn');
-        const submitCodeBtn = document.getElementById('submit-code-btn');
-        const closeGameBtn = document.getElementById('close-game-btn');
-        const confirmExitBtn = document.getElementById('confirm-exit-btn');
-        const cancelExitBtn = document.getElementById('cancel-exit-btn');
-        const gameStatus = document.getElementById('game-status');
-        const cells = document.querySelectorAll('.cell');
-        
-        const scoreXEl = document.getElementById('score-x');
-        const scoreOEl = document.getElementById('score-o');
-        const labelXEl = document.getElementById('label-x');
-        const labelOEl = document.getElementById('label-o');
-
-        // Game Configuration Variables
-        let currentGameMode = ''; 
-        let currentPlayer = 'X';  
-        let myOnlineSymbol = ''; 
-        let currentRoomCode = '';
-        let boardState = ["", "", "", "", "", "", "", "", ""];
-        let gameActive = true;
-        
-        let scoreX = 0;
-        let scoreO = 0;
-
-        const winningConditions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], 
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], 
-            [0, 4, 8], [2, 4, 6]             
+        const logs = [
+            "Analyzing dataset matrix blocks...",
+            "Encrypting socket payload vectors...",
+            "Running heuristic defense arrays...",
+            "Optimizing active node responses...",
+            "Handshake sequence verified via client.",
+            "Syncing memory state variables...",
+            "Garbage collection executed completely.",
+            "Evaluating minimax nodes at depth 9...",
+            "Target cell path locked for execution.",
+            "Refreshing core connection pools..."
         ];
 
-        // --- NAVIGATION HANDLERS ---
-        friendModeBtn.addEventListener('click', () => startNewGame('friend'));
-        botModeBtn.addEventListener('click', () => startNewGame('bot'));
-        hardcoreModeBtn.addEventListener('click', () => startNewGame('hardcore'));
-        
-        onlineModeBtn.addEventListener('click', () => {
-            menuScreen.classList.add('hidden');
-            onlineMenuScreen.classList.remove('hidden');
-        });
+        const terminal = document.getElementById('terminal');
 
-        closeOnlineBtn.addEventListener('click', () => {
-            onlineMenuScreen.classList.add('hidden');
-            onlinePanel.classList.add('hidden');
-            menuScreen.classList.remove('hidden');
-        });
-
-        closeGameBtn.addEventListener('click', () => exitModal.classList.remove('hidden'));
-        cancelExitBtn.addEventListener('click', () => exitModal.classList.add('hidden'));
-
-        confirmExitBtn.addEventListener('click', () => {
-            exitModal.classList.add('hidden');
-            gameScreen.classList.add('hidden');
-            onlineMenuScreen.classList.add('hidden');
-            menuScreen.classList.remove('hidden');
-            if(currentGameMode === 'online') {
-                socket.emit('disconnect');
-            }
-            resetEntireSystem(); 
-        });
-
-        // --- INTERNET MULTIPLAYER PANEL TRIGGERS ---
-        createServerBtn.addEventListener('click', () => {
-            onlinePanel.classList.remove('hidden');
-            panelGuestView.classList.add('hidden');
-            panelHostView.classList.remove('hidden');
-            socket.emit('createRoom');
-        });
-
-        joinServerBtn.addEventListener('click', () => {
-            onlinePanel.classList.remove('hidden');
-            panelHostView.classList.add('hidden');
-            panelGuestView.classList.remove('hidden');
-            roomCodeInput.value = '';
-        });
-
-        submitCodeBtn.addEventListener('click', () => {
-            const code = roomCodeInput.value.trim();
-            if(code.length === 6) {
-                currentRoomCode = code;
-                socket.emit('joinRoom', code);
-            } else {
-                alert("Please enter a valid 6-digit room code.");
-            }
-        });
-
-        // --- SOCKET NETWORKING EVENT RECEIVERS ---
-        socket.on('roomCreated', (roomCode) => {
-            currentRoomCode = roomCode;
-            roomCodeDisplay.textContent = roomCode;
-        });
-
-        socket.on('gameStart', ({ symbol, turn }) => {
-            currentGameMode = 'online';
-            myOnlineSymbol = symbol;
-            currentPlayer = turn;
-
-            labelXEl.textContent = symbol === 'X' ? "YOU (X)" : "THEY (X)";
-            labelOEl.textContent = symbol === 'O' ? "YOU (O)" : "THEY (O)";
-
-            onlineMenuScreen.classList.add('hidden');
-            onlinePanel.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            resetGameEngine();
-            updateTurnStatusDisplay();
-        });
-
-        socket.on('moveMade', ({ index, symbol, nextTurn }) => {
-            executeMove(index, symbol);
-            currentPlayer = nextTurn;
-            if (!checkResult()) {
-                updateTurnStatusDisplay();
-            }
-        });
-
-        socket.on('roomResetByServer', () => {
-            resetGameEngine();
-            updateTurnStatusDisplay();
-        });
-
-        // INSTANT DISCONNECT ACTIONS
-        socket.on('opponentDisconnected', () => {
-            alert("Your Opponent Left The Game!");
-            gameScreen.classList.add('hidden');
-            onlineMenuScreen.classList.add('hidden');
-            menuScreen.classList.remove('hidden');
-            resetEntireSystem();
-        });
-
-        socket.on('errorMsg', (msg) => alert(msg));
-
-        // --- ENGINE SYSTEMS ---
-        function startNewGame(mode) {
-            currentGameMode = mode;
-            labelXEl.textContent = "PLAYER X";
-            if (mode === 'bot') labelOEl.textContent = "BOT O";
-            else if (mode === 'hardcore') labelOEl.textContent = "EVIL BOT O";
-            else labelOEl.textContent = "PLAYER O";
+        // Periodically appends realistic hacker logs to the feed container
+        setInterval(() => {
+            const time = new Date().toLocaleTimeString();
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            terminal.innerHTML += `[${time}] LNFO: ${randomLog}<br>`;
+            terminal.scrollTop = terminal.scrollHeight;
             
-            resetGameEngine();
-            menuScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
+            if (terminal.innerHTML.split('<br>').length > 12) {
+                terminal.innerHTML = terminal.innerHTML.split('<br>').slice(1).join('<br>');
+            }
+        }, 2200);
+
+        // Dynamically modulates bar components to create an alive interface
+        function updateTelemetryStats() {
+            // Calculate random changing telemetry values
+            const load = Math.floor(Math.random() * 25) + 30;
+            const mem = Math.floor(Math.random() * 15) + 65;
+            const stability = Math.floor(Math.random() * 5) + 95;
+            const model = Math.floor(Math.random() * 20) + 75;
+            const heuristics = Math.floor(Math.random() * 30) + 45;
+            
+            // Set Text Strings
+            document.getElementById('load-txt').innerText = `${load}%`;
+            document.getElementById('mem-txt').innerText = `${mem}%`;
+            document.getElementById('stable-txt').innerText = `${stability}%`;
+            document.getElementById('model-txt').innerText = `${model}%`;
+            document.getElementById('heur-txt').innerText = `${heuristics}%`;
+
+            // Adjust Bar Widths
+            document.getElementById('load-bar').style.width = `${load}%`;
+            document.getElementById('mem-bar').style.width = `${mem}%`;
+            document.getElementById('stable-bar').style.width = `${stability}%`;
+            document.getElementById('model-bar').style.width = `${model}%`;
+            document.getElementById('heur-bar').style.width = `${heuristics}%`;
+
+            // Fluctuates raw network latency metrics
+            document.getElementById('ping-val').innerText = `${Math.floor(Math.random() * 8) + 12}ms`;
+            document.getElementById('rate-val').innerText = `${(Math.random() * 15 + 40).toFixed(1)}kb/s`;
         }
 
-        function resetGameEngine() {
-            if(currentGameMode !== 'online') {
-                currentPlayer = 'X';
-            }
-            boardState = ["", "", "", "", "", "", "", "", ""];
-            gameActive = true;
-            gameStatus.textContent = currentGameMode === 'online' ? "" : "X's Turn";
-            cells.forEach(cell => { cell.textContent = ""; cell.style.color = "white"; });
-            if(currentGameMode === 'online') updateTurnStatusDisplay();
-        }
-
-        function resetEntireSystem() {
-            scoreX = 0; scoreO = 0;
-            scoreXEl.textContent = "0"; scoreOEl.textContent = "0";
-            resetGameEngine();
-        }
-
-        function updateTurnStatusDisplay() {
-            if (currentPlayer === myOnlineSymbol) {
-                gameStatus.textContent = "Your Turn!";
-            } else {
-                gameStatus.textContent = "Opponent's Turn...";
-            }
-        }
-
-        cells.forEach(cell => {
-            cell.addEventListener('click', (e) => {
-                const clickedCellIndex = parseInt(e.target.getAttribute('data-index'));
-
-                if (boardState[clickedCellIndex] !== "" || !gameActive) return;
-
-                if (currentGameMode === 'online') {
-                    if (currentPlayer !== myOnlineSymbol) return;
-                    
-                    executeMove(clickedCellIndex, myOnlineSymbol);
-                    socket.emit('makeMove', { roomCode: currentRoomCode, index: clickedCellIndex, symbol: myOnlineSymbol });
-                    
-                    if (checkResult()) return;
-                    currentPlayer = myOnlineSymbol === 'X' ? 'O' : 'X';
-                    updateTurnStatusDisplay();
-                } else {
-                    executeMove(clickedCellIndex, currentPlayer);
-                    if (checkResult()) return;
-
-                    if (currentGameMode === 'friend') {
-                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                        gameStatus.textContent = `${currentPlayer}'s Turn`;
-                    } else if ((currentGameMode === 'bot' || currentGameMode === 'hardcore') && gameActive) {
-                        currentPlayer = 'O';
-                        gameStatus.textContent = "Bot is thinking...";
-                        gameActive = false; 
-                        setTimeout(executeBotMove, 500); 
-                    }
-                }
-            });
-        });
-
-        function executeMove(index, player) {
-            boardState[index] = player;
-            cells[index].textContent = player;
-            cells[index].style.color = player === 'X' ? '#ff3333' : '#3399ff'; 
-        }
-
-        function executeBotMove() {
-            gameActive = true; 
-            let targetMove = null;
-
-            if (currentGameMode === 'hardcore') {
-                let bestScore = -Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (boardState[i] === "") {
-                        boardState[i] = "O";
-                        let score = minimax(boardState, 0, false);
-                        boardState[i] = "";
-                        if (score > bestScore) { bestScore = score; targetMove = i; }
-                    }
-                }
-            } else {
-                function findWinningOrBlockingSpot(playerSign) {
-                    for (let i = 0; i < winningConditions.length; i++) {
-                        const [a, b, c] = winningConditions[i];
-                        if (boardState[a] === playerSign && boardState[b] === playerSign && boardState[c] === "") return c;
-                        if (boardState[a] === playerSign && boardState[c] === playerSign && boardState[b] === "") return b;
-                        if (boardState[b] === playerSign && boardState[c] === playerSign && boardState[a] === "") return a;
-                    }
-                    return null;
-                }
-                targetMove = findWinningOrBlockingSpot('O');
-                if (targetMove === null) targetMove = findWinningOrBlockingSpot('X');
-                if (targetMove === null) {
-                    if (boardState[4] === "") targetMove = 4;
-                    else {
-                        let preferredCorners = [0, 2, 6, 8].filter(index => boardState[index] === "");
-                        if (preferredCorners.length > 0) targetMove = preferredCorners[Math.floor(Math.random() * preferredCorners.length)];
-                    }
-                }
-            }
-
-            if (targetMove !== null) {
-                executeMove(targetMove, 'O');
-                if (!checkResult()) { currentPlayer = 'X'; gameStatus.textContent = "X's Turn"; }
-            }
-        }
-
-        function minimax(state, depth, isMaximizing) {
-            let result = checkScoresInternal();
-            if (result !== null) return result;
-            if (isMaximizing) {
-                let bestScore = -Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (state[i] === "") { state[i] = "O"; let score = minimax(state, depth + 1, false); state[i] = ""; bestScore = Math.max(score, bestScore); }
-                }
-                return bestScore;
-            } else {
-                let bestScore = Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (state[i] === "") { state[i] = "X"; let score = minimax(state, depth + 1, true); state[i] = ""; bestScore = Math.min(score, bestScore); }
-                }
-                return bestScore;
-            }
-        }
-
-        function checkScoresInternal() {
-            for (let i = 0; i < winningConditions.length; i++) {
-                const [a, b, c] = winningConditions[i];
-                if (boardState[a] !== "" && boardState[a] === boardState[b] && boardState[b] === boardState[c]) return boardState[a] === "O" ? 10 : -10;
-            }
-            if (!boardState.includes("")) return 0;
-            return null;
-        }
-
-        function checkResult() {
-            let roundWon = false;
-            for (let i = 0; i < winningConditions.length; i++) {
-                const winCondition = winningConditions[i];
-                if (boardState[winCondition[0]] !== '' && boardState[winCondition[0]] === boardState[winCondition[1]] && boardState[winCondition[1]] === boardState[winCondition[2]]) {
-                    roundWon = true;
-                    break;
-                }
-            }
-
-            if (roundWon) {
-                gameActive = false;
-                if (currentPlayer === 'X') scoreX++;
-                else {
-                    scoreO++;
-                    if (currentGameMode === 'hardcore') scoreX = Math.max(0, scoreX - 1);
-                }
-                
-                scoreXEl.textContent = scoreX;
-                scoreOEl.textContent = scoreO;
-                
-                gameStatus.textContent = currentGameMode === 'online' 
-                    ? (currentPlayer === myOnlineSymbol ? "You Win! 🎉 New match in 3s..." : "Opponent Wins! 😢 New match in 3s...") 
-                    : `${currentPlayer} Wins! New game in 3s... 🎉`;
-                
-                setTimeout(() => {
-                    if(currentGameMode === 'online') {
-                        socket.emit('requestReset', currentRoomCode);
-                    } else {
-                        resetGameEngine();
-                    }
-                }, 3000);
-                return true;
-            }
-
-            if (!boardState.includes("")) {
-                gameActive = false;
-                gameStatus.textContent = "It's a Draw! New game in 3s... 👔";
-                setTimeout(() => {
-                    if(currentGameMode === 'online') {
-                        socket.emit('requestReset', currentRoomCode);
-                    } else {
-                        resetGameEngine();
-                    }
-                }, 3000);
-                return true;
-            }
-            return false;
-        }
+        setInterval(updateTelemetryStats, 3000);
+        updateTelemetryStats();
     </script>
 </body>
 </html>
